@@ -1,0 +1,25 @@
+language: node_js
+sudo: required
+services:
+    - docker
+
+before_install:
+    - docker build -t tomket/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+    - docker run -e CI=true tomket/react-test npm test
+
+after_success:
+    - docker build -t tomket/multi-client ./client
+    - docker build -t tomket/multi-nginx ./nginx
+    - docker build -t tomket/multi-server ./server
+    - docker build -t tomket/multi-worker ./worker
+
+    # Log in to the docker CLI
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+    # Take those images and push them to docker hub
+    - docker push tomket/multi-client 
+    - docker push tomket/multi-nginx
+    - docker push tomket/multi-server
+    - docker push tomket/multi-worker
